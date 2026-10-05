@@ -1,14 +1,13 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/material.dart';
 
-import '../config.dart';
-import '../services/ai_service.dart';
 import '../services/api_service.dart';
 import '../services/recorder_service.dart';
+import 'settings_screen.dart';
 
-/// 原型主畫面：(1) 測試連線 (2) 同 Apple Foundation Model 傾偈 (3) 錄音上載
+/// 主畫面：只有一個大錄音按鈕。
+/// 撳一下開始錄音（上方顯示 Recording），再撳一下停止並上載（上方顯示 Responding）。
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -17,161 +16,129 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _ai = AiService();
   final _api = ApiService();
   final _rec = RecorderService();
-  final _input = TextEditingController();
 
-  String _aiStatus = '檢查中…';
-  String _serverStatus = '未測試';
-  String _reply = '';
-  String _uploadResult = '';
-  bool _thinking = false;
   bool _recording = false;
-  bool _uploading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ai.availability().then((s) => setState(() => _aiStatus = s));
-  }
+  bool _responding = false;
 
   @override
   void dispose() {
     _rec.dispose();
-    _input.dispose();
     super.dispose();
   }
 
-  Future<void> _testServer() async {
-    try {
-      final r = await _api.health();
-      setState(() => _serverStatus = '連線成功：$r');
-    } catch (e) {
-      setState(() => _serverStatus = '連唔到 $apiBaseUrl：$e');
-    }
-  }
-
-  Future<void> _ask() async {
-    final text = _input.text.trim();
-    if (text.isEmpty) return;
-    setState(() => _thinking = true);
-    final reply = await _ai.respond(text, instructions: aiInstructions);
-    setState(() {
-      _reply = reply.text;
-      _thinking = false;
-    });
-    // 記錄去後端（失敗唔影響使用）
-    _api
-        .logChat(text, reply.text, reply.tier, fallbackReason: reply.fallbackReason)
-        .catchError((_) {});
-  }
-
   Future<void> _toggleRecord() async {
+    if (_responding) return;
+
     if (_recording) {
       final file = await _rec.stop();
       setState(() => _recording = false);
-      if (file != null) await _upload(file, 'record');
-    } else {
-      if (!await _rec.hasPermission()) {
-        setState(() => _uploadResult = '請喺「設定」開啟咪高峰權限');
-        return;
-      }
-      await _rec.start();
-      setState(() => _recording = true);
+      if (file != null) await _upload(file);
+      return;
     }
-  }
-  Future<void> _pickMp3() async {
-    // file_picker 12+：pickFile() 回傳單一檔案，撳取消時回傳 null
-    final file = await fp.FilePicker.pickFile(
-      type: fp.FileType.custom,
-      allowedExtensions: ['mp3', 'm4a', 'wav'],
-    );
-    final path = file?.path;
-    if (path != null) await _upload(File(path), 'file');
+
+    if (!await _rec.hasPermission()) {
+      _showMessage('請喺「設定」開啟咪高峰權限');
+      return;
+    }
+    await _rec.start();
+    setState(() => _recording = true);
   }
 
-  Future<void> _upload(File file, String source) async {
-    setState(() {
-      _uploading = true;
-      _uploadResult = '上載中…';
-    });
+  Future<void> _upload(File file) async {
+    setState(() => _responding = true);
     try {
-      final r = await _api.uploadAudio(file, source: source);
-      setState(() => _uploadResult =
-          '成功！\nID：${r['id']}\n長度：${r['duration_sec']} 秒\n大小：${r['size_bytes']} bytes\nFirestore：${r['saved_to_firestore']}');
+      await _api.uploadAudio(file, source: 'record');
     } catch (e) {
-      setState(() => _uploadResult = '失敗：$e');
+      _showMessage('上載失敗，請再試一次');
+      debugPrint('upload error: $e');
     } finally {
-      setState(() => _uploading = false);
+      if (mounted) setState(() => _responding = false);
     }
+  }
+
+  void _showMessage(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  String get _statusText {
+    if (_recording) return 'Recording';
+    if (_responding) return 'Responding';
+    return '';
   }
 
   @override
   Widget build(BuildContext context) {
-    final big = const Size.fromHeight(72); // 長者友善：大按鈕
-    return Scaffold(
-      appBar: AppBar(title: const Text('CareMate 原型')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Text('AI 狀態：$_aiStatus'),
-            const SizedBox(height: 8),
-            FilledButton.tonal(
-              style: FilledButton.styleFrom(minimumSize: big),
-              onPressed: _testServer,
-              child: const Text('測試伺服器連線'),
-            ),
-            Text(_serverStatus),
-            const Divider(height: 40),
+    final size = MediaQuery.sizeOf(context);
+    // 按鈕直徑：螢幕闊度嘅 65%，最大 320
+    final buttonSize = (size.width * 0.65).clamp(200.0, 320.0).toDouble();
+    final color = _recording
+        ? Colors.red
+        : Theme.of(context).colorScheme.primary;
 
-            // ===== 1. Foundation Model 對話 =====
-            TextField(
-              controller: _input,
-              decoration: const InputDecoration(
-                labelText: '想同 CareMate 講咩？',
-                border: OutlineInputBorder(),
-              ),
-              minLines: 1,
-              maxLines: 3,
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            iconSize: 36,
+            tooltip: '設定',
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
-            const SizedBox(height: 12),
-            FilledButton(
-              style: FilledButton.styleFrom(minimumSize: big),
-              onPressed: _thinking ? null : _ask,
-              child: Text(_thinking ? '諗緊…' : '傳送'),
-            ),
-            const SizedBox(height: 12),
-            if (_reply.isNotEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(_reply),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 固定高度，避免文字出現／消失時按鈕跳位
+              SizedBox(
+                height: 64,
+                child: Text(
+                  _statusText,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
-            TextButton(onPressed: _ai.reset, child: const Text('開新話題')),
-            const Divider(height: 40),
-
-            // ===== 2. 錄音上載 =====
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(96),
-                backgroundColor: _recording ? Colors.red : null,
+              const SizedBox(height: 16),
+              SizedBox(
+                width: buttonSize,
+                height: buttonSize,
+                child: ElevatedButton(
+                  onPressed: _responding ? null : _toggleRecord,
+                  style: ElevatedButton.styleFrom(
+                    shape: const CircleBorder(),
+                    backgroundColor: color,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey.shade400,
+                    elevation: 8,
+                  ),
+                  child: _responding
+                      ? SizedBox(
+                          width: buttonSize * 0.3,
+                          height: buttonSize * 0.3,
+                          child: const CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 6,
+                          ),
+                        )
+                      : Icon(
+                          _recording ? Icons.stop_rounded : Icons.mic_rounded,
+                          size: buttonSize * 0.45,
+                          semanticLabel: _recording ? '停止錄音' : '開始錄音',
+                        ),
+                ),
               ),
-              onPressed: _uploading ? null : _toggleRecord,
-              icon: Icon(_recording ? Icons.stop : Icons.mic, size: 40),
-              label: Text(_recording ? '停止並上載' : '開始錄音'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(minimumSize: big),
-              onPressed: _uploading ? null : _pickMp3,
-              child: const Text('揀手機入面嘅 mp3 上載'),
-            ),
-            const SizedBox(height: 12),
-            Text(_uploadResult),
-          ],
+            ],
+          ),
         ),
       ),
     );
