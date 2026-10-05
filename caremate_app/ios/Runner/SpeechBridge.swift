@@ -63,34 +63,63 @@ final class SpeechBridge: NSObject, AVSpeechSynthesizerDelegate {
           return
         }
 
-        let request = SFSpeechURLRecognitionRequest(url: url)
-        request.shouldReportPartialResults = false
-        request.addsPunctuation = true
-        // 部機支援就喺手機本身辨識，唔會將錄音傳去 Apple 伺服器
-        if recognizer.supportsOnDeviceRecognition {
-          request.requiresOnDeviceRecognition = true
-        }
-
-        var finished = false
-        self.recognitionTask = recognizer.recognitionTask(with: request) { res, error in
-          DispatchQueue.main.async {
-            if finished { return }
-            if let res = res, res.isFinal {
-              finished = true
-              result(res.bestTranscription.formattedString)
-            } else if let error = error {
-              finished = true
-              let ns = error as NSError
-              // 1110 = 冇偵測到講嘢 → 當空白
-              if ns.domain == "kAFAssistantErrorDomain" && ns.code == 1110 {
-                result("")
-              } else {
-                result(FlutterError(code: "SPEECH_ERROR", message: error.localizedDescription, details: nil))
-              }
+        // 部機支援就先試喺手機本身辨識（錄音唔會傳去 Apple 伺服器）；
+        // 如果手機未下載廣東話離線模型，會出 kLSRErrorDomain 300「Failed to initialize recognizer」，
+        // 咁就自動改用網絡辨識再試一次。
+        let preferOnDevice = recognizer.supportsOnDeviceRecognition
+        self.recognize(url: url, recognizer: recognizer, onDevice: preferOnDevice) { text, error in
+          if let ns = error as NSError?, preferOnDevice, ns.domain == "kLSRErrorDomain" {
+            NSLog("%@", "[SpeechBridge] on-device 辨識失敗（\(ns.domain) \(ns.code)），改用網絡辨識")
+            self.recognize(url: url, recognizer: recognizer, onDevice: false) { text2, error2 in
+              self.finish(result, text: text2, error: error2)
             }
+          } else {
+            self.finish(result, text: text, error: error)
           }
         }
       }
+    }
+  }
+
+  /// 執行一次辨識，完成時喺 main thread 回傳 (文字, 錯誤)
+  private func recognize(url: URL, recognizer: SFSpeechRecognizer, onDevice: Bool,
+                         completion: @escaping (String?, Error?) -> Void) {
+    let request = SFSpeechURLRecognitionRequest(url: url)
+    request.shouldReportPartialResults = false
+    request.addsPunctuation = true
+    request.requiresOnDeviceRecognition = onDevice
+
+    var finished = false
+    recognitionTask = recognizer.recognitionTask(with: request) { res, error in
+      DispatchQueue.main.async {
+        if finished { return }
+        if let res = res, res.isFinal {
+          finished = true
+          completion(res.bestTranscription.formattedString, nil)
+        } else if let error = error {
+          finished = true
+          completion(nil, error)
+        }
+      }
+    }
+  }
+
+  private func finish(_ result: FlutterResult, text: String?, error: Error?) {
+    if let text = text {
+      result(text)
+      return
+    }
+    guard let ns = error as NSError? else {
+      result("")
+      return
+    }
+    // 1110 = 冇偵測到講嘢 → 當空白
+    if ns.domain == "kAFAssistantErrorDomain" && ns.code == 1110 {
+      result("")
+    } else {
+      result(FlutterError(code: "SPEECH_ERROR",
+                          message: "\(ns.domain) \(ns.code): \(ns.localizedDescription)",
+                          details: nil))
     }
   }
 
