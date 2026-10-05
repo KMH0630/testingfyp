@@ -45,6 +45,10 @@ async def upload_audio(
                 raise HTTPException(413, f"檔案超過 {MAX_UPLOAD_MB}MB")
             f.write(chunk)
 
+    if size == 0:
+        raw_path.unlink(missing_ok=True)
+        raise HTTPException(400, "收到空檔案（0 bytes），請檢查手機錄音")
+
     try:
         if ext == ".mp3":
             raw_path.rename(mp3_path)
@@ -52,8 +56,15 @@ async def upload_audio(
             to_mp3(raw_path, mp3_path)
             raw_path.unlink(missing_ok=True)   # 轉完刪原檔；如需保留可以註解呢行
     except ConvertError as e:
-        raw_path.unlink(missing_ok=True)
-        raise HTTPException(422, f"轉換 mp3 失敗：{e}")
+        # 保留失敗嘅原檔喺 uploads/_failed/，方便 debug（例如用 ffprobe 檢查）
+        failed_dir = UPLOAD_DIR / "_failed"
+        failed_dir.mkdir(exist_ok=True)
+        failed_path = failed_dir / raw_path.name
+        raw_path.rename(failed_path)
+        raise HTTPException(
+            422,
+            f"轉換 mp3 失敗（收到 {size} bytes，原檔已存去 {failed_path.relative_to(UPLOAD_DIR)}）：{e}",
+        )
 
     record = {
         "id": audio_id,

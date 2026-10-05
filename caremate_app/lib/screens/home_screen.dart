@@ -32,9 +32,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_responding) return;
 
     if (_recording) {
-      final file = await _rec.stop();
-      setState(() => _recording = false);
-      if (file != null) await _upload(file);
+      try {
+        final file = await _rec.stop();
+        setState(() => _recording = false);
+        if (file != null) await _upload(file);
+      } on RecordingTooShort {
+        setState(() => _recording = false);
+        _showMessage('錄音太短，請按住講多一陣');
+      }
       return;
     }
 
@@ -50,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _responding = true);
     try {
       await _api.uploadAudio(file, source: 'record');
+      await file.delete(); // 上載成功就刪走手機上嘅暫存檔
     } catch (e) {
       _showMessage('上載失敗，請再試一次');
       debugPrint('upload error: $e');
