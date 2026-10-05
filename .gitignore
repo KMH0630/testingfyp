@@ -18,3 +18,8 @@ caremate_app/ios/Flutter/Flutter.framework
 caremate_app/ios/Flutter/Flutter.podspec
 caremate_app/*.iml
 
+
+# 測試音檔 / 上載檔案
+*.m4a
+backend/uploads/
+backend/serviceAccountKey.json

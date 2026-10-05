@@ -1,6 +1,5 @@
 import 'dart:io';
 
-//import 'package:file_picker/file_picker.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/material.dart';
 
@@ -82,41 +81,13 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _recording = true);
     }
   }
-/* 
   Future<void> _pickMp3() async {
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['mp3', 'm4a', 'wav'],
-    );
-    final path = picked?.files.single.path;
-    if (path != null) await _upload(File(path), 'file');
-  } */
-
-/*   Future<void> _pickMp3() async {
-    final picked = await fp.FilePicker.platform.pickFiles( 
-      type: fp.FileType.custom,                           
-      allowedExtensions: ['mp3', 'm4a', 'wav'],
-    );
-    final path = picked?.files.single.path;
-    if (path != null) await _upload(File(path), 'file');
-  } */
-
-/*   Future<void> _pickMp3() async {
-    final picked = await fp.FilePickerPlatform.instance.pickFiles(
+    // file_picker 12+：pickFile() 回傳單一檔案，撳取消時回傳 null
+    final file = await fp.FilePicker.pickFile(
       type: fp.FileType.custom,
       allowedExtensions: ['mp3', 'm4a', 'wav'],
     );
-    final path = picked?.files.single.path;
-    if (path != null) await _upload(File(path), 'file');
-  } */
-
-  Future<void> _pickMp3() async {
-    final picked = await fp.FilePickerPlatform.instance.pickFiles(
-      type: fp.FileType.custom,
-      allowedExtensions: ['mp3', 'm4a', 'wav'],
-    );
-    final path = picked?.first.path; 
-    
+    final path = file?.path;
     if (path != null) await _upload(File(path), 'file');
   }
 
