@@ -1,15 +1,14 @@
-"""錄音上載：手機 → FastAPI → 存檔 + 轉 mp3 → Firestore 記錄。"""
+"""錄音上載：手機 → FastAPI → 存檔 + 轉 mp3 → Firestore users/{uid}/audio/{audioId}。"""
 import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from google.cloud.firestore_v1.base_query import FieldFilter
+from google.cloud import firestore
 
+from .. import store
 from ..config import UPLOAD_DIR, MAX_UPLOAD_MB
 from ..deps import get_current_uid
-from ..firebase import get_db
 from ..services.audio_convert import to_mp3, duration_seconds, ConvertError
 
 router = APIRouter(prefix="/audio", tags=["audio"])
@@ -68,22 +67,21 @@ async def upload_audio(
 
     record = {
         "id": audio_id,
-        "uid": uid,
         "original_filename": file.filename,
         "source": source,
         "size_bytes": mp3_path.stat().st_size,
         "duration_sec": duration_seconds(mp3_path),
         "mp3_path": str(mp3_path.relative_to(UPLOAD_DIR)),
         "status": "uploaded",              # 之後做 STT 會改成 transcribed
-        "created_at": datetime.now(timezone.utc),
+        "created_at": store.now(),
     }
 
-    db = get_db()
-    if db is not None:
-        db.collection("audio_uploads").document(audio_id).set(record)
+    col = store.sub(uid, store.AUDIO)
+    if col is not None:
+        col.document(audio_id).set(record)
 
-    return {**record, "created_at": record["created_at"].isoformat(),
-            "url": f"/audio/{audio_id}.mp3", "saved_to_firestore": db is not None}
+    return {**store.jsonable(record), "url": f"/audio/{audio_id}.mp3",
+            "saved_to_firestore": col is not None}
 
 
 @router.get("/{audio_id}.mp3")
@@ -100,12 +98,9 @@ def get_audio(audio_id: str, uid: str = Depends(get_current_uid)):
 @router.get("")
 def list_audio(uid: str = Depends(get_current_uid)):
     """列出自己上載過嘅錄音（由 Firestore 讀；未設定 Firebase 就讀資料夾）。"""
-    db = get_db()
-    if db is not None:
-        docs = db.collection("audio_uploads").where(filter=FieldFilter("uid", "==", uid)).stream()
-        items = [d.to_dict() for d in docs]
-        for i in items:
-            i["created_at"] = i["created_at"].isoformat()
-        return sorted(items, key=lambda x: x["created_at"], reverse=True)
+    col = store.sub(uid, store.AUDIO)
+    if col is not None:
+        docs = col.order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).stream()
+        return [store.jsonable(d.to_dict()) for d in docs]
     user_dir = UPLOAD_DIR / uid
     return [{"id": p.stem, "url": f"/audio/{p.name}"} for p in sorted(user_dir.glob("*.mp3"))] if user_dir.exists() else []

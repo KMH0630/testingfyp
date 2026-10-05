@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .firebase import init_firebase
-from .routers import audio, chat, health
+from .routers import audio, chat, health, users
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,7 +20,8 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="CareMate API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="CareMate API", version="0.2.0", lifespan=lifespan)
 app.include_router(health.router)
 app.include_router(audio.router)
 app.include_router(chat.router)
+app.include_router(users.router)

@@ -31,6 +31,16 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _responding = false;
 
   @override
+  void initState() {
+    super.initState();
+    // 確保 Firestore 有 users/{uid}（第一次開 App 會自動建立）
+    _api.getMe().then(
+          (me) => debugPrint('user: ${me['uid']} role=${me['role']}'),
+          onError: (e) => debugPrint('getMe error: $e'),
+        );
+  }
+
+  @override
   void dispose() {
     _rec.dispose();
     super.dispose();
@@ -64,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _respond(File file) async {
     setState(() => _responding = true);
 
-    // 1. 上載錄音去後端（同時進行，唔使等）
+    // 1. 上載錄音去後端（同時進行，唔使等）→ users/{uid}/audio
     final upload = _upload(file);
 
     try {
@@ -79,12 +89,16 @@ class _HomeScreenState extends State<HomeScreen> {
       // 3. 文字 → AI 回覆
       final reply = await _ai.respond(userText, instructions: aiInstructions);
       debugPrint('AI (tier ${reply.tier}${reply.fallbackReason == null ? '' : ', ${reply.fallbackReason}'}): ${reply.text}');
-      _api
-          .logChat(userText, reply.text, reply.tier, fallbackReason: reply.fallbackReason)
-          .catchError((e) => debugPrint('logChat error: $e'));
-
-      // 4. 讀出回覆
+      // 4. 讀出回覆，同時等上載完成後記錄對話（連埋錄音 id）
+      final log = upload.then((audioId) => _api.logChat(
+            userText,
+            reply.text,
+            reply.tier,
+            fallbackReason: reply.fallbackReason,
+            audioId: audioId,
+          )).catchError((Object e) => debugPrint('logChat error: $e'));
       await _speech.speak(reply.text);
+      await log;
     } on PlatformException catch (e) {
       debugPrint('speech error: ${e.code} ${e.message}');
       _showMessage(e.code == 'SPEECH_DENIED'
@@ -101,11 +115,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _upload(File file) async {
+  /// 上載錄音，成功回傳 audio id（失敗回傳 null，唔影響對話）
+  Future<String?> _upload(File file) async {
     try {
-      await _api.uploadAudio(file, source: 'record');
+      final r = await _api.uploadAudio(file, source: 'record');
+      return r['id'] as String?;
     } catch (e) {
       debugPrint('upload error: $e');
+      return null;
     }
   }
 

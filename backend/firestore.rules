@@ -1,14 +1,58 @@
 rules_version = '2';
+
+// CareMate Firestore 安全規則
+// - 所有寫入主要經 FastAPI 後端（Admin SDK 唔受呢啲規則限制）
+// - App 直接讀 Firestore 時：長者只可以讀自己；照顧者只可以讀已配對長者
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 每個用戶只可以讀寫自己嘅資料
-    match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+    function signedIn() {
+      return request.auth != null;
     }
-    // 錄音記錄由後端（Admin SDK，唔受 rules 限制）寫入；用戶只可以讀自己嘅
-    match /audio_uploads/{id} {
-      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
-      allow write: if false;
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // 照顧者 uid 喺長者嘅 caregiver_uids 入面
+    function isCaregiverOf(uid) {
+      return signedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/users/$(uid)).data.get('caregiver_uids', []);
+    }
+
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isCaregiverOf(uid);
+      // 用戶可以改自己嘅名、語言、設定、緊急聯絡人；role 同配對關係只可以由後端改
+      allow update: if isSelf(uid)
+        && onlyChanges(['display_name', 'locale', 'settings', 'emergency_contacts', 'updated_at']);
+      allow create, delete: if false;
+
+      match /{collection}/{docId} {
+        allow read: if isSelf(uid) || isCaregiverOf(uid);
+
+        // 長者喺 App／Apple Watch 撳「已食藥」
+        allow update: if collection == 'medication_events'
+          && isSelf(uid)
+          && onlyChanges(['status', 'taken_at'])
+          && request.resource.data.status == 'taken';
+
+        // 照顧者確認已處理警報
+        allow update: if collection == 'alerts'
+          && isCaregiverOf(uid)
+          && onlyChanges(['acknowledged', 'acknowledged_by', 'acknowledged_at'])
+          && request.resource.data.acknowledged_by == request.auth.uid;
+
+        allow create, delete: if false;
+      }
+    }
+
+    // 配對碼只可以由後端讀寫
+    match /link_codes/{code} {
+      allow read, write: if false;
     }
   }
 }

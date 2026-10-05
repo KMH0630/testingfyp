@@ -20,7 +20,7 @@ class ApiService {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
-  /// 上載音訊（m4a / mp3 / wav），伺服器會統一轉成 mp3
+  /// 上載音訊（wav / m4a / mp3），伺服器會統一轉成 mp3，並記錄去 users/{uid}/audio/{id}
   Future<Map<String, dynamic>> uploadAudio(File file, {String source = 'record'}) async {
     final req = http.MultipartRequest('POST', Uri.parse('$apiBaseUrl/audio/upload'))
       ..headers.addAll(await _authHeader())
@@ -34,9 +34,26 @@ class ApiService {
     return jsonDecode(body) as Map<String, dynamic>;
   }
 
-  /// 將一次 AI 對話記錄傳去後端（後端寫入 Firestore）
-  Future<void> logChat(String userText, String aiText, int tier, {String? fallbackReason}) async {
-    await http.post(
+  /// 讀取（第一次會自動建立）自己嘅用戶資料 users/{uid}
+  Future<Map<String, dynamic>> getMe() async {
+    final res = await http
+        .get(Uri.parse('$apiBaseUrl/users/me'), headers: await _authHeader())
+        .timeout(const Duration(seconds: 15));
+    if (res.statusCode != 200) {
+      throw HttpException('讀取用戶資料失敗 (${res.statusCode})：${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  /// 將一輪對話記錄去 users/{uid}/messages；audioId 對應 users/{uid}/audio/{audioId}
+  Future<void> logChat(
+    String userText,
+    String aiText,
+    int tier, {
+    String? fallbackReason,
+    String? audioId,
+  }) async {
+    final res = await http.post(
       Uri.parse('$apiBaseUrl/chat/log'),
       headers: {...await _authHeader(), 'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -44,7 +61,12 @@ class ApiService {
         'ai_text': aiText,
         'model_tier': tier,
         'fallback_reason': fallbackReason,
+        'audio_id': audioId,
+        'input_type': 'voice',
       }),
-    );
+    ).timeout(const Duration(seconds: 15));
+    if (res.statusCode != 200) {
+      throw HttpException('記錄對話失敗 (${res.statusCode})：${res.body}');
+    }
   }
 }
