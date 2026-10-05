@@ -1,0 +1,10 @@
+{"text": "今日同孫仔去公園，好開心。", "label": {"mood": "positive", "risk_level": "low", "topic": "daily_chat", "reason": "分享開心日常"}}
+{"text": "天氣凍咗，記得要着多件衫。", "label": {"mood": "neutral", "risk_level": "low", "topic": "daily_chat", "reason": "一般閒聊"}}
+{"text": "個膝頭又痛，唔想出街。", "label": {"mood": "low", "risk_level": "low", "topic": "health", "reason": "輕微身體不適"}}
+{"text": "連續幾晚都瞓唔著，做咩都提唔起勁。", "label": {"mood": "low", "risk_level": "medium", "topic": "emotional_support", "reason": "持續失眠及情緒低落"}}
+{"text": "啲藥食嚟都冇用，我唔食喇。", "label": {"mood": "angry", "risk_level": "medium", "topic": "medication", "reason": "拒絕服藥"}}
+{"text": "老伴走咗之後，我日日都覺得好孤單，冇人理我。", "label": {"mood": "distressed", "risk_level": "medium", "topic": "emotional_support", "reason": "長期孤獨及喪親之痛"}}
+{"text": "我覺得活落去都冇意思。", "label": {"mood": "distressed", "risk_level": "high", "topic": "crisis", "reason": "表達無望及輕生念頭"}}
+{"text": "我已經寫好遺書，啲錢留畀個女。", "label": {"mood": "distressed", "risk_level": "high", "topic": "crisis", "reason": "交代後事，可能有自殺計劃"}}
+{"text": "胸口好痛，透唔到氣。", "label": {"mood": "anxious", "risk_level": "high", "topic": "crisis", "reason": "急性身體危險徵狀"}}
+{"text": "跌咗喺廁所，起唔到身。", "label": {"mood": "anxious", "risk_level": "high", "topic": "crisis", "reason": "跌倒後無法起身"}}

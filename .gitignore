@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+.env
+
+# Flutter / CareMate App
+caremate_app/.dart_tool/
+caremate_app/.idea/
+caremate_app/build/
+caremate_app/ios/Pods/
+caremate_app/ios/.symlinks/
+caremate_app/ios/Flutter/Flutter.framework
+caremate_app/ios/Flutter/Flutter.podspec
+caremate_app/*.iml
+

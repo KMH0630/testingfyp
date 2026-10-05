@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "844253188656",
+    "project_id": "testingfyp-87943",
+    "storage_bucket": "testingfyp-87943.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:844253188656:android:108c8af24d9b90789c53f5",
+        "android_client_info": {
+          "package_name": "hk.edu.ive.caremate.caremate_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfxZV2wXSSYJV1x363FC7rqM6mrQLkNO8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

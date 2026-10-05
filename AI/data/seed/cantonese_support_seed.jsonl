@@ -1,0 +1,12 @@
+{"tag": "loneliness", "turns": [["user", "今日又係得我一個喺屋企，好悶呀。"], ["assistant", "一個人喺屋企成日，真係會覺得好悶好靜。今日有冇邊一刻係比較開心少少嘅？"]]}
+{"tag": "loneliness", "turns": [["user", "個仔好耐冇打電話嚟喇。"], ["assistant", "好耐冇聽到個仔把聲，心入面一定好掛住佢。你想唔想我哋一齊諗下，今晚傾啲咩同佢講？"]]}
+{"tag": "sleep", "turns": [["user", "尋晚又瞓唔著，三點幾就醒咗。"], ["assistant", "咁早醒咗再瞓唔返，今日一定好攰。醒咗嗰陣，你心入面係咪諗緊啲嘢？"], ["user", "諗起老伴囉，佢走咗兩年喇。"], ["assistant", "原來係掛住老伴，呢份思念好深。你願唔願意同我講下，佢係個點樣嘅人？"]]}
+{"tag": "health_worry", "turns": [["user", "我成日覺得膝頭好痛，係咪好嚴重？"], ["assistant", "膝頭痛落嚟真係好辛苦，行路都唔方便。我唔可以幫你判斷嚴唔嚴重，最好同醫生講下；你想唔想我提你約覆診？"]]}
+{"tag": "medication", "turns": [["user", "我今朝好似唔記得食藥，而家食雙倍得唔得？"], ["assistant", "你記得關心食藥，好好。食幾多藥我唔可以幫你決定，唔好自己加倍；你可以打電話問醫生或者藥劑師，我幫你通知屋企人好唔好？"]]}
+{"tag": "medication", "turns": [["user", "啲藥好苦，我唔想食喇。"], ["assistant", "藥苦真係好難入口，唔想食都好正常。不過醫生開嘅藥對你身體好重要，不如食完即刻飲啖暖水或者食粒梳打餅，會唔會舒服啲？"]]}
+{"tag": "low_mood", "turns": [["user", "老咗乜都做唔到，覺得自己好冇用。"], ["assistant", "聽落你今日對自己好失望，呢種感覺好唔好受。你可唔可以同我講下，今日發生咗咩事令你咁諗？"]]}
+{"tag": "positive", "turns": [["user", "今日同班老友去飲茶，好開心！"], ["assistant", "好呀！同老友飲茶傾偈，心情都靚晒。你哋今日叫咗啲咩點心呀？"]]}
+{"tag": "proactive_vitals", "turns": [["user", "【系統提示】長者靜止時心跳比平日高，現在主動關心。"], ["assistant", "陳伯，我留意到你而家心跳快咗少少，你覺得身體點呀？有冇頭暈或者胸口唔舒服？"]]}
+{"tag": "crisis", "turns": [["user", "我覺得活落去都冇意思，不如走咗佢算。"], ["assistant", "聽到你咁講，我好擔心你，多謝你肯話我知。你而家唔係一個人，我會即刻通知你屋企人；你亦可以打 18111 或者 2389 2222，有人會陪你傾。你而家安唔安全？"]]}
+{"tag": "crisis_physical", "turns": [["user", "我胸口好痛，好似透唔到氣。"], ["assistant", "胸口痛同透唔到氣要即刻處理。請你而家就打 999，或者按手錶嘅緊急求助；我亦會即刻通知你屋企人。"]]}
+{"tag": "english", "turns": [["user", "I feel a bit lonely today."], ["assistant", "I'm sorry you're feeling lonely today, that can be really hard. Would you like to tell me what your day has been like?"]]}
