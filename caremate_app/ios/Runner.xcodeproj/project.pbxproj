@@ -17,6 +17,7 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		BF287BBD3072D94700343471 /* FoundationModelsBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF287BBC3072D94700343471 /* FoundationModelsBridge.swift */; };
+		BF287BBF3072D94700343471 /* SpeechBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF287BBE3072D94700343471 /* SpeechBridge.swift */; };
 		DD3A5AA862CC7723CEAA775D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F551C94B9229A2FE9CC06E45 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
@@ -62,6 +63,7 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BF287BBC3072D94700343471 /* FoundationModelsBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsBridge.swift; sourceTree = "<group>"; };
+		BF287BBE3072D94700343471 /* SpeechBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechBridge.swift; sourceTree = "<group>"; };
 		F551C94B9229A2FE9CC06E45 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -121,6 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				BF287BBC3072D94700343471 /* FoundationModelsBridge.swift */,
+				BF287BBE3072D94700343471 /* SpeechBridge.swift */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -292,6 +295,7 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
 				BF287BBD3072D94700343471 /* FoundationModelsBridge.swift in Sources */,
+				BF287BBF3072D94700343471 /* SpeechBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

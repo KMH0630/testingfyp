@@ -30,6 +30,8 @@
 	<string></string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>CareMate 會將你講嘅說話轉成文字，等 AI 明白你想講咩。</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>CareMate 需要使用咪高峰，等你可以用把聲同 CareMate 傾偈。</string>
 	<key>UIApplicationSceneManifest</key>

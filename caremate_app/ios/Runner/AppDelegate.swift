@@ -8,6 +8,8 @@ import UIKit
 
   private let fmBridge = FoundationModelsBridge()
   private var fmChannel: FlutterMethodChannel?
+  private let speechBridge = SpeechBridge()
+  private var speechChannel: FlutterMethodChannel?
 
   override func application(
     _ application: UIApplication,
@@ -27,5 +29,15 @@ import UIKit
       self?.fmBridge.handle(call, result: result)
     }
     fmChannel = channel
+
+    // 語音：Speech-to-Text + Text-to-Speech
+    let speech = FlutterMethodChannel(
+      name: "caremate/speech",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+    speech.setMethodCallHandler { [weak self] call, result in
+      self?.speechBridge.handle(call, result: result)
+    }
+    speechChannel = speech
   }
 }

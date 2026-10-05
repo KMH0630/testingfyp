@@ -1,13 +1,19 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../config.dart';
+import '../services/ai_service.dart';
 import '../services/api_service.dart';
 import '../services/recorder_service.dart';
+import '../services/speech_service.dart';
 import 'settings_screen.dart';
 
 /// 主畫面：只有一個大錄音按鈕。
-/// 撳一下開始錄音（上方顯示 Recording），再撳一下停止並上載（上方顯示 Responding）。
+/// 撳一下開始錄音（上方顯示 Recording），再撳一下停止。
+/// 停止後（上方顯示 Responding）：錄音轉文字 → Apple Foundation Model 回覆 → 讀出回覆；
+/// 同時將錄音上載去後端。
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -18,6 +24,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _api = ApiService();
   final _rec = RecorderService();
+  final _ai = AiService();
+  final _speech = SpeechService();
 
   bool _recording = false;
   bool _responding = false;
@@ -30,12 +38,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _toggleRecord() async {
     if (_responding) return;
+    await _speech.stopSpeaking();
 
     if (_recording) {
       try {
         final file = await _rec.stop();
         setState(() => _recording = false);
-        if (file != null) await _upload(file);
+        if (file != null) await _respond(file);
       } on RecordingTooShort {
         setState(() => _recording = false);
         _showMessage('錄音太短，請按住講多一陣');
@@ -51,16 +60,52 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _recording = true);
   }
 
-  Future<void> _upload(File file) async {
+  /// 錄音完成後嘅流程
+  Future<void> _respond(File file) async {
     setState(() => _responding = true);
+
+    // 1. 上載錄音去後端（同時進行，唔使等）
+    final upload = _upload(file);
+
+    try {
+      // 2. 錄音 → 文字
+      final userText = await _speech.transcribe(file.path);
+      debugPrint('STT: $userText');
+      if (userText.isEmpty) {
+        _showMessage('聽唔清楚，請再講一次');
+        return;
+      }
+
+      // 3. 文字 → AI 回覆
+      final reply = await _ai.respond(userText, instructions: aiInstructions);
+      debugPrint('AI (tier ${reply.tier}${reply.fallbackReason == null ? '' : ', ${reply.fallbackReason}'}): ${reply.text}');
+      _api
+          .logChat(userText, reply.text, reply.tier, fallbackReason: reply.fallbackReason)
+          .catchError((e) => debugPrint('logChat error: $e'));
+
+      // 4. 讀出回覆
+      await _speech.speak(reply.text);
+    } on PlatformException catch (e) {
+      debugPrint('speech error: ${e.code} ${e.message}');
+      _showMessage(e.code == 'SPEECH_DENIED'
+          ? '請喺「設定」開啟語音辨識權限'
+          : '語音辨識失敗，請再試一次');
+    } catch (e) {
+      debugPrint('respond error: $e');
+      _showMessage('出咗少少問題，請再試一次');
+    } finally {
+      await upload;
+      // 上載同語音辨識都完成先刪走手機上嘅暫存檔
+      if (await file.exists()) await file.delete();
+      if (mounted) setState(() => _responding = false);
+    }
+  }
+
+  Future<void> _upload(File file) async {
     try {
       await _api.uploadAudio(file, source: 'record');
-      await file.delete(); // 上載成功就刪走手機上嘅暫存檔
     } catch (e) {
-      _showMessage('上載失敗，請再試一次');
       debugPrint('upload error: $e');
-    } finally {
-      if (mounted) setState(() => _responding = false);
     }
   }
 
