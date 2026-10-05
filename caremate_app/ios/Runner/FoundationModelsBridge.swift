@@ -97,14 +97,22 @@ final class FoundationModelsBridge {
         default:
           code = "GENERATION_ERROR"
         }
-        await reply(result, FlutterError(code: code, message: error.localizedDescription, details: nil))
+        await reply(result, FlutterError(code: code, message: Self.describe(error), details: nil))
       } catch {
-        await reply(result, FlutterError(code: "UNKNOWN", message: error.localizedDescription, details: nil))
+        await reply(result, FlutterError(code: "UNKNOWN", message: Self.describe(error), details: nil))
       }
       return
     }
     #endif
     await reply(result, FlutterError(code: "UNAVAILABLE", message: "unsupportedOS", details: nil))
+  }
+
+  /// 將錯誤完整轉成文字（類型、domain、code、內容），方便 debug
+  private static func describe(_ error: Error) -> String {
+    let ns = error as NSError
+    let text = "\(type(of: error)) [\(ns.domain) \(ns.code)] \(String(describing: error))"
+    NSLog("%@", "[FoundationModelsBridge] \(text)")
+    return text
   }
 
   /// FlutterResult 一定要喺 main thread 回傳
