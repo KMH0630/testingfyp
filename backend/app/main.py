@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .firebase import init_firebase
-from .routers import audio, chat, health, users
+from .routers import audio, chat, health, medications, users
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,3 +25,4 @@ app.include_router(health.router)
 app.include_router(audio.router)
 app.include_router(chat.router)
 app.include_router(users.router)
+app.include_router(medications.router)

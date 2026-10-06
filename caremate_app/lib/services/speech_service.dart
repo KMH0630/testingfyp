@@ -7,7 +7,10 @@ class SpeechService {
 
   /// 錄音檔轉文字。冇聽到講嘢就回傳空字串。
   /// 失敗會 throw PlatformException（SPEECH_DENIED / SPEECH_UNAVAILABLE / SPEECH_ERROR）。
-  Future<String> transcribe(String path, {String locale = defaultLocale}) async {
+  Future<String> transcribe(
+    String path, {
+    String locale = defaultLocale,
+  }) async {
     final text = await _channel.invokeMethod<String>('transcribe', {
       'path': path,
       'locale': locale,

@@ -35,9 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // 確保 Firestore 有 users/{uid}（第一次開 App 會自動建立）
     _api.getMe().then(
-          (me) => debugPrint('user: ${me['uid']} role=${me['role']}'),
-          onError: (e) => debugPrint('getMe error: $e'),
-        );
+      (me) => debugPrint('user: ${me['uid']} role=${me['role']}'),
+      onError: (e) => debugPrint('getMe error: $e'),
+    );
   }
 
   @override
@@ -88,22 +88,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // 3. 文字 → AI 回覆
       final reply = await _ai.respond(userText, instructions: aiInstructions);
-      debugPrint('AI (tier ${reply.tier}${reply.fallbackReason == null ? '' : ', ${reply.fallbackReason}'}): ${reply.text}');
+      debugPrint(
+        'AI (tier ${reply.tier}${reply.fallbackReason == null ? '' : ', ${reply.fallbackReason}'}): ${reply.text}',
+      );
       // 4. 讀出回覆，同時等上載完成後記錄對話（連埋錄音 id）
-      final log = upload.then((audioId) => _api.logChat(
-            userText,
-            reply.text,
-            reply.tier,
-            fallbackReason: reply.fallbackReason,
-            audioId: audioId,
-          )).catchError((Object e) => debugPrint('logChat error: $e'));
+      final log = upload
+          .then(
+            (audioId) => _api.logChat(
+              userText,
+              reply.text,
+              reply.tier,
+              fallbackReason: reply.fallbackReason,
+              audioId: audioId,
+            ),
+          )
+          .catchError((Object e) => debugPrint('logChat error: $e'));
       await _speech.speak(reply.text);
       await log;
     } on PlatformException catch (e) {
       debugPrint('speech error: ${e.code} ${e.message}');
-      _showMessage(e.code == 'SPEECH_DENIED'
-          ? '請喺「設定」開啟語音辨識權限'
-          : '語音辨識失敗，請再試一次');
+      _showMessage(
+        e.code == 'SPEECH_DENIED' ? '請喺「設定」開啟語音辨識權限' : '語音辨識失敗，請再試一次',
+      );
     } catch (e) {
       debugPrint('respond error: $e');
       _showMessage('出咗少少問題，請再試一次');
@@ -153,9 +159,9 @@ class _HomeScreenState extends State<HomeScreen> {
             iconSize: 36,
             tooltip: '設定',
             icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
           ),
           const SizedBox(width: 8),
         ],
@@ -170,10 +176,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 64,
                 child: Text(
                   _statusText,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(context).textTheme.headlineMedium
+                      ?.copyWith(color: color, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 16),

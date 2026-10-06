@@ -26,15 +26,14 @@ class AiService {
     try {
       final res = await _channel.invokeMapMethod<String, dynamic>('respond', {
         'prompt': prompt,
-        if (instructions != null) 'instructions': instructions,
+        'instructions': ?instructions,
       });
       return AiReply(res?['text'] as String? ?? '', 1);
     } on PlatformException catch (e) {
       debugPrint('FoundationModels error: ${e.code} ${e.message}');
       // GUARDRAIL / CONTEXT_FULL / UNAVAILABLE / GENERATION_ERROR
       // 之後喺呢度轉去 Tier 2 自訓模型
-      return AiReply('唔好意思，我而家諗唔到點答，不如我哋傾下第樣嘢？', 0,
-          fallbackReason: e.code);
+      return AiReply('唔好意思，我而家諗唔到點答，不如我哋傾下第樣嘢？', 0, fallbackReason: e.code);
     } on MissingPluginException {
       return const AiReply('呢部手機未支援 AI 對話功能。', 0, fallbackReason: 'notIOS');
     }
